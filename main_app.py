@@ -37,9 +37,8 @@ with col1:
     st.pyplot(fig1)
 with col2:
     st.subheader("Chart B")
-    avg_data = df.groupby(chartB_x)[chartB_y].mean().reset_index()
     fig2, ax2 = plt.subplots()
-    sns.countplot(data=avg_data, x=chartB_x, y=chartB_y, ax=ax2)
+    sns.countplot(data=df, x=chartB_x, hue=chartA_hue, ax=ax2)
     plt.xticks(rotation=20)
     st.pyplot(fig2)
 st.subheader("Vote for the better chart")
