@@ -3,37 +3,53 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-st.title("Weather Data A/B Testing App")
-st.write("Business question: Which chart better helps compare weather patterns across locations?")
+st.title("A/B Testing Data App")
 
-df = pd.read_csv("weather.csv")
+# ---- LOAD DATA ----
+uploaded_file = st.file_uploader("Upload your dataset (CSV)", type=["csv"])
+
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file)
+else:
+    df = pd.read_csv("weather.csv")  # default dataset
 
 st.subheader("Dataset preview")
 st.dataframe(df.head())
 
-st.subheader("Dataset summary")
-st.write("Rows:", df.shape[0])
-st.write("Columns:", df.shape[1])
+# ---- COLUMN SELECTION ----
+st.subheader("Select variables")
+
+columns = df.columns.tolist()
+
+x_var = st.selectbox("Select X variable (categorical)", columns)
+y_var = st.selectbox("Select Y variable (numeric)", columns)
+
+# ---- CHARTS ----
+st.header("Compare two charts")
 
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("Chart A: Weather types by location")
+    st.subheader("Chart A: Distribution")
     fig1, ax1 = plt.subplots()
-    sns.countplot(data=df, x="location", hue="weather", ax=ax1)
+    sns.countplot(data=df, x=x_var, ax=ax1)
     plt.xticks(rotation=20)
     st.pyplot(fig1)
 
 with col2:
-    st.subheader("Chart B: Average max temperature by location")
-    avg_temp = df.groupby("location")["temp_max"].mean().reset_index()
-    fig2, ax2 = plt.subplots()
-    sns.barplot(data=avg_temp, x="location", y="temp_max", ax=ax2)
-    plt.xticks(rotation=20)
-    st.pyplot(fig2)
+    st.subheader("Chart B: Average comparison")
+    try:
+        avg_data = df.groupby(x_var)[y_var].mean().reset_index()
+        fig2, ax2 = plt.subplots()
+        sns.barplot(data=avg_data, x=x_var, y=y_var, ax=ax2)
+        plt.xticks(rotation=20)
+        st.pyplot(fig2)
+    except:
+        st.write("Please select a valid numeric Y variable.")
 
-st.subheader("Vote for the better chart")
-vote = st.radio("Choose one:", ["Chart A", "Chart B"])
+# ---- VOTING ----
+st.subheader("Vote")
+vote = st.radio("Which chart is better?", ["Chart A", "Chart B"])
 
 if "votes_a" not in st.session_state:
     st.session_state.votes_a = 0
@@ -46,9 +62,11 @@ if st.button("Submit vote"):
     else:
         st.session_state.votes_b += 1
 
-st.subheader("Current results")
+# ---- RESULTS ----
+st.subheader("Results")
 results = pd.DataFrame({
     "Chart": ["Chart A", "Chart B"],
     "Votes": [st.session_state.votes_a, st.session_state.votes_b]
 })
+
 st.dataframe(results)
